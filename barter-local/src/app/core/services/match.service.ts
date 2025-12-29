@@ -1,10 +1,8 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Match } from '../models/match.model';
 import { AuthService } from './auth.service';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 @Injectable({
     providedIn: 'root'
@@ -14,33 +12,32 @@ export class MatchService {
     private matchesSignal = signal<Match[]>([]);
     readonly myMatches = computed(() => this.matchesSignal());
 
-    constructor(private http: HttpClient, private auth: AuthService) {
-        // Reload matches when user changes
-        // In a real app we might use an effect or rx stream. 
-        // Simply loading on init and whenever we infer a change
+    private http = inject(HttpClient);
+    private auth = inject(AuthService);
+
+    constructor() {
+        // Reload matches periodically or when needed
     }
 
     loadMatches() {
         const user = this.auth.currentUser();
-        if (!user) {
-            this.matchesSignal.set([]);
-            return;
-        }
-        this.http.get<Match[]>(`/api/matches/${user.id}`).subscribe(matches => {
-            this.matchesSignal.set(matches);
-        });
-    }
+        if (!user) return;
 
-    showInterest(matchId: string) {
-        return this.http.post(`/api/interest/${matchId}`, {});
+        this.http.get<Match[]>(`/api/matches?userId=${user.userId}`)
+            .subscribe(matches => {
+                this.matchesSignal.set(matches);
+            });
     }
 
     acceptTrade(matchId: string) {
-        const userId = this.auth.currentUser()?.id;
-        return this.http.post(`/api/matches/${matchId}/accept`, { userId });
+        const user = this.auth.currentUser();
+        if (!user) return new Observable(); // Should handle error
+        return this.http.post(`/api/matches/${matchId}/accept`, { userId: user.userId });
     }
 
     completeTrade(matchId: string) {
         return this.http.post(`/api/matches/${matchId}/complete`, {});
     }
 }
+import { Observable, of } from 'rxjs'; // Fix import
+

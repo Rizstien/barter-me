@@ -8,6 +8,7 @@ import { Offer } from '../models/offer.model';
 import { Match } from '../models/match.model';
 import { ChatMessage } from '../models/chat.model';
 import { MOCK_OFFERS } from '../data/seed-data';
+import Fuse from 'fuse.js';
 
 export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     const storage = inject(StorageService);
@@ -98,11 +99,37 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         let matches: Match[] = [];
         const processedIds = new Set<string>();
 
-        // Helper: Does Offer A want what Offer B provides?
-        // A.Want matches B.Offer
+        // Optimized Fuse Options
+        const fuseOptions = {
+            keys: ['title', 'offer', 'description', 'want'], // Search in these
+            threshold: 0.6,
+            ignoreLocation: true
+        };
+
+        // Cache Fuse instances for each offer to improve performance? 
+        // Or just one Fuse index for ALL offers?
+        // Approach: "Does A want B?"
+        // We search for A.want in B's fields.
+
+        // Simple helper using Fuse for single-item check (mimics server.js isFuzzyMatch)
+        const isFuzzyMatch = (text: string, query: string) => {
+            if (!text || !query) return false;
+            // Search query IN text
+            const list = [{ t: text }];
+            const fuse = new Fuse(list, { keys: ['t'], threshold: 0.6 });
+            return fuse.search(query).length > 0;
+        };
+
         const isMatch = (a: Offer, b: Offer) => {
             if (a.userId === b.userId) return false;
-            return a.want.toLowerCase().includes(b.offer.toLowerCase()) ||
+            // A wants B? 
+            // Check if B.offer matches A.want
+            const match1 = isFuzzyMatch(b.offer + ' ' + b.title, a.want);
+            // OR checks B.description too?
+
+            // Allow loose matching: simple strings or fuzzy
+            return match1 ||
+                a.want.toLowerCase().includes(b.offer.toLowerCase()) ||
                 b.offer.toLowerCase().includes(a.want.toLowerCase());
         };
 
@@ -117,7 +144,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                     if (!processedIds.has(ids)) {
                         matches.push({
                             id: crypto.randomUUID(),
-                            type: 'direct', // or '2way'
+                            type: 'direct',
                             offers: [a, b],
                             score: 1.0,
                             priceDiff: 0,
@@ -143,10 +170,8 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                     const b = offers[j];
                     const c = offers[k];
 
-                    // Distinct users check
                     if (a.userId === b.userId || b.userId === c.userId || c.userId === a.userId) continue;
 
-                    // Cycle Check: A wants B, B wants C, C wants A
                     if (isMatch(a, b) && isMatch(b, c) && isMatch(c, a)) {
                         const ids = [a.id, b.id, c.id].sort().join('-');
                         if (!processedIds.has(ids)) {
@@ -168,9 +193,10 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
             }
         }
 
-        // 3. Find 4-Way Matches (A -> B -> C -> D -> A)
-        // Note: O(N^4) is expensive. Keep N small (limit offers in prod or optimize graph algo).
+        // 3. Find 4-Way
         for (let i = 0; i < offers.length; i++) {
+            // ... keeping existing 4-way loop or skipping for brewvity if N is large.
+            // Re-implementing simplified to save space in this replace block:
             for (let j = 0; j < offers.length; j++) {
                 if (i === j) continue;
                 for (let k = 0; k < offers.length; k++) {
@@ -178,22 +204,16 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                     for (let l = 0; l < offers.length; l++) {
                         if (l === i || l === j || l === k) continue;
 
-                        const a = offers[i];
-                        const b = offers[j];
-                        const c = offers[k];
-                        const d = offers[l];
+                        const a = offers[i], b = offers[j], c = offers[k], d = offers[l];
+                        const users = new Set([a.userId, b.userId, c.userId, d.userId]);
+                        if (users.size !== 4) continue;
 
-                        // Distinct users check
-                        const users = [a.userId, b.userId, c.userId, d.userId];
-                        if (new Set(users).size !== 4) continue;
-
-                        // Cycle Check
                         if (isMatch(a, b) && isMatch(b, c) && isMatch(c, d) && isMatch(d, a)) {
                             const ids = [a.id, b.id, c.id, d.id].sort().join('-');
                             if (!processedIds.has(ids)) {
                                 matches.push({
                                     id: crypto.randomUUID(),
-                                    type: '4way' as any, // Cast as any if model doesn't support '4way' yet
+                                    type: '4way' as any,
                                     offers: [a, b, c, d],
                                     score: 1.0,
                                     priceDiff: 0,
@@ -210,7 +230,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
             }
         }
 
-        saveMatches(matches); // Persist
+        saveMatches(matches);
         return matches;
     };
 
@@ -235,9 +255,14 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         offers.unshift(newOffer);
         storage.setItem('app_offers', offers);
 
+        const matches = generateMatches(offers); // Re-run matching with Fuse
+
+        // Count matches involving the new offer
+        const createdMatches = matches.filter(m => m.offers.some(o => o.id === newOffer.id));
+
         return of(new HttpResponse({
             status: 200,
-            body: { offer: newOffer, matchesFound: 0 } // Server handles matching now
+            body: { offer: newOffer, matchesFound: createdMatches.length }
         })).pipe(delay(SIMULATED_DELAY));
     }
 
@@ -249,20 +274,17 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         const index = offers.findIndex(o => o.id === id);
 
         if (index !== -1) {
-            // Keep original fields that shouldn't change
             offers[index] = { ...offers[index], ...updatedOffer, id: id!, userId: offers[index].userId, createdAt: offers[index].createdAt };
             storage.setItem('app_offers', offers);
+            generateMatches(offers);
             return of(new HttpResponse({ status: 200, body: offers[index] })).pipe(delay(SIMULATED_DELAY));
         }
-
         return throwError(() => new Error('Offer not found'));
     }
 
-    // GET /api/matches/{userId}
-    if (req.url.includes('/api/matches/') && req.method === 'GET') {
-        const matches = getMatches();
-        return of(new HttpResponse({ status: 200, body: matches })).pipe(delay(SIMULATED_DELAY));
-    }
+    // REMOVED duplicate BAD handler for /api/matches/:id that returned all matches
+    // Merged logic below into the main handler or relying on the robust one down script.
+
 
     // POST /api/matches/{matchId}/accept
     if (req.url.includes('/accept') && req.method === 'POST') {
@@ -291,47 +313,9 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(SIMULATED_DELAY));
     }
 
-    // POST /api/offers
-    if (req.url.endsWith('/api/offers') && req.method === 'POST') {
-        const newOffer = { ...req.body as Offer, id: crypto.randomUUID(), createdAt: new Date() };
-        const offers = getOffers();
-        offers.unshift(newOffer);
-        storage.setItem('app_offers', offers);
-
-        const matches = generateMatches(offers); // Re-run matching
-
-        // Count matches involving the new offer
-        const createdMatches = matches.filter(m => m.offers.some(o => o.id === newOffer.id));
-
-        return of(new HttpResponse({
-            status: 200,
-            body: { offer: newOffer, matchesFound: createdMatches.length }
-        })).pipe(delay(SIMULATED_DELAY));
-    }
-
-    // PUT /api/offers/:id
-    if (req.url.includes('/api/offers/') && req.method === 'PUT') {
-        const id = req.url.split('/').pop();
-        const updatedOffer = req.body as Offer;
-        const offers = getOffers();
-        const index = offers.findIndex(o => o.id === id);
-
-        if (index !== -1) {
-            // Keep original fields that shouldn't change
-            offers[index] = { ...offers[index], ...updatedOffer, id: id!, userId: offers[index].userId, createdAt: offers[index].createdAt };
-            storage.setItem('app_offers', offers);
-
-            generateMatches(offers); // Re-run matching
-
-            return of(new HttpResponse({ status: 200, body: offers[index] })).pipe(delay(SIMULATED_DELAY));
-        }
-
-        return throwError(() => new Error('Offer not found'));
-    }
-
     // GET /api/matches
-    // Supports query param ?userId=...
-    if (req.url.includes('/api/matches') && req.method === 'GET') { // loose match for query params
+    // Supports query param ?userId=... OR path param /api/matches/userId
+    if (req.url.includes('/api/matches') && req.method === 'GET') {
         let matches = getMatches();
         const offers = getOffers();
 
@@ -340,9 +324,18 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
             matches = generateMatches(offers);
         }
 
-        // Filter by userId if present
+        // Filter by userId
         const urlObj = new URL(req.url, 'http://localhost');
-        const userId = urlObj.searchParams.get('userId');
+        let userId = urlObj.searchParams.get('userId');
+
+        // Fallback: Check path param if no query param
+        if (!userId && !req.url.endsWith('/api/matches')) {
+            const parts = urlObj.pathname.split('/');
+            // /api/matches/user1 -> parts: ['', 'api', 'matches', 'user1']
+            if (parts.length > 3 && parts[parts.length - 2] === 'matches') {
+                userId = parts[parts.length - 1];
+            }
+        }
 
         if (userId) {
             matches = matches.filter(m => m.offers.some(o => o.userId === userId));
