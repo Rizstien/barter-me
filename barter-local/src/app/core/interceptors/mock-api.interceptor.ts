@@ -21,10 +21,10 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
     // --- Helper to get data ---
     const getOffers = (): Offer[] => {
-        const stored = storage.getItem<Offer[]>('app_offers');
+        const stored = storage.getItem<Offer[]>('barter-offers'); // Changed to match pattern, though not explicitly asked, for consistency
         if (stored && stored.length > 0) return stored;
         // Seed if empty
-        storage.setItem('app_offers', MOCK_OFFERS);
+        storage.setItem('barter-offers', MOCK_OFFERS);
         return MOCK_OFFERS;
     };
 
@@ -34,7 +34,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     }
 
     const getMatches = (): Match[] => {
-        const stored = storage.getItem<StoredMatch[]>('app_matches') || [];
+        const stored = storage.getItem<StoredMatch[]>('barter-matches') || [];
         const offers = getOffers();
         const offerMap = new Map(offers.map(o => [o.id, o]));
 
@@ -69,11 +69,11 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
             acceptedBy: m.acceptedBy || [],
             status: m.status || 'active'
         }));
-        storage.setItem('app_matches', storedMatches);
+        storage.setItem('barter-matches', storedMatches);
     };
 
-    const getChats = (): Record<string, ChatMessage[]> => storage.getItem('app_chats') || {};
-    const saveChats = (chats: Record<string, ChatMessage[]>) => storage.setItem('app_chats', chats);
+    const getChats = (): Record<string, ChatMessage[]> => storage.getItem('barter-chats') || {};
+    const saveChats = (chats: Record<string, ChatMessage[]>) => storage.setItem('barter-chats', chats);
 
     // --- Matching Logic (Re-implemented Client Side) ---
     // Simple Haversine implementation if library not available or for simplicity
@@ -275,7 +275,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
         if (index !== -1) {
             offers[index] = { ...offers[index], ...updatedOffer, id: id!, userId: offers[index].userId, createdAt: offers[index].createdAt };
-            storage.setItem('app_offers', offers);
+            storage.setItem('barter-offers', offers);
             generateMatches(offers);
             return of(new HttpResponse({ status: 200, body: offers[index] })).pipe(delay(SIMULATED_DELAY));
         }

@@ -9,10 +9,10 @@ import { ChatMessage } from '../../core/models/chat.model';
 import { Offer } from '../../core/models/offer.model';
 
 @Component({
-    selector: 'app-chat',
-    standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
-    template: `
+   selector: 'app-chat',
+   standalone: true,
+   imports: [CommonModule, FormsModule, RouterLink],
+   template: `
     <div class="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-gray-50">
        
        <!-- Sidebar: Trade Details -->
@@ -288,168 +288,189 @@ import { Offer } from '../../core/models/offer.model';
   `
 })
 export class ChatComponent implements OnInit, OnDestroy {
-    @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
-    messages: ChatMessage[] = [];
-    newMessage = '';
-    matchId = '';
-    intervalId: any;
-    showDetailsMobile = false;
-    isAccepting = false;
-    selectedOffer = signal<Offer | null>(null);
+   messages: ChatMessage[] = [];
+   newMessage = '';
+   matchId = '';
+   intervalId: any;
+   showDetailsMobile = false;
+   isAccepting = false;
+   selectedOffer = signal<Offer | null>(null);
 
-    chatService = inject(ChatService);
-    matchService = inject(MatchService);
-    auth = inject(AuthService);
-    route = inject(ActivatedRoute);
+   chatService = inject(ChatService);
+   matchService = inject(MatchService);
+   auth = inject(AuthService);
+   route = inject(ActivatedRoute);
 
-    // Compute active match
-    activeMatch = computed(() => {
-        const matches = this.matchService.myMatches();
-        return matches.find(m => m.id === this.matchId);
-    });
+   // Compute active match
+   activeMatch = computed(() => {
+      const matches = this.matchService.myMatches();
+      return matches.find(m => m.id === this.matchId);
+   });
 
-    // All offers that aren't mine (handles multi-way)
-    otherOffers = computed(() => {
-        const match = this.activeMatch();
-        const myId = this.auth.currentUser()?.id;
-        return match?.offers.filter(o => o.userId !== myId && o.userId !== 'me') || [];
-    });
+   // All offers that aren't mine (handles multi-way)
+   otherOffers = computed(() => {
+      const match = this.activeMatch();
+      const myId = this.auth.currentUser()?.id;
+      return match?.offers.filter(o => o.userId !== myId && o.userId !== 'me') || [];
+   });
 
-    // My offer
-    myOffer = computed(() => {
-        const match = this.activeMatch();
-        const myId = this.auth.currentUser()?.id;
-        return match?.offers.find(o => o.userId === myId || o.userId === 'me');
-    });
+   // My offer
+   myOffer = computed(() => {
+      const match = this.activeMatch();
+      const myId = this.auth.currentUser()?.id;
+      return match?.offers.find(o => o.userId === myId || o.userId === 'me');
+   });
 
-    // Check if I have accepted
-    hasAccepted = computed(() => {
-        const match = this.activeMatch();
-        const myId = this.auth.currentUser()?.id;
-        if (!match || !myId) return false;
-        return match.acceptedBy?.includes(myId) || false;
-    });
+   // Check if I have accepted
+   hasAccepted = computed(() => {
+      const match = this.activeMatch();
+      const myId = this.auth.currentUser()?.id;
+      if (!match || !myId) return false;
+      return match.acceptedBy?.includes(myId) || false;
+   });
 
-    // Map of UserID -> Name
-    userMap = computed(() => {
-        const map: Record<string, string> = {};
-        this.activeMatch()?.offers.forEach(o => {
-            if (o.userId) { // strict check
-                map[o.userId] = this.auth.getUserById(o.userId).name;
-            }
-        });
-        return map;
-    });
+   // Map of UserID -> Name
+   userMap = computed(() => {
+      const map: Record<string, string> = {};
+      this.activeMatch()?.offers.forEach(o => {
+         if (o.userId) { // strict check
+            map[o.userId] = this.auth.getUserById(o.userId).name;
+         }
+      });
+      return map;
+   });
 
-    // Map of UserID -> Color Class
-    colorMap = computed(() => {
-        const map: Record<string, string> = {};
-        const colors = ['text-blue-600', 'text-purple-600', 'text-pink-600', 'text-orange-600', 'text-indigo-600'];
-        this.activeMatch()?.offers.forEach((o, index) => {
-            map[o.userId] = colors[index % colors.length];
-        });
-        return map;
-    });
+   // Map of UserID -> Color Class
+   colorMap = computed(() => {
+      const map: Record<string, string> = {};
+      const colors = ['text-blue-600', 'text-purple-600', 'text-pink-600', 'text-orange-600', 'text-indigo-600'];
+      this.activeMatch()?.offers.forEach((o, index) => {
+         map[o.userId] = colors[index % colors.length];
+      });
+      return map;
+   });
 
-    ngOnInit() {
-        this.matchId = this.route.snapshot.paramMap.get('id') || '';
-        this.matchService.loadMatches();
-        this.loadMessages();
-        this.intervalId = setInterval(() => {
-            this.loadMessages();
-            this.matchService.loadMatches(); // Poll match status for acceptances
-        }, 3000);
-    }
+   realtimeSubscription: any;
 
-    ngOnDestroy() {
-        if (this.intervalId) clearInterval(this.intervalId);
-    }
+   ngOnInit() {
+      this.matchId = this.route.snapshot.paramMap.get('id') || '';
+      this.matchService.loadMatches();
+      this.loadMessages();
 
-    loadMessages() {
-        this.chatService.getMessages(this.matchId).subscribe(msgs => {
+      // Join real-time channel
+      this.chatService.joinMatch(this.matchId);
+      this.realtimeSubscription = this.chatService.realtimeMessages$.subscribe(msg => {
+         // Only add if it belongs to this match (channel separation handles it, but safety check)
+         if (msg.matchId === this.matchId) {
+            this.messages.push(msg);
+            this.scrollToBottom();
+         }
+      });
+
+      // Polling fallback (1 second as requested)
+      this.intervalId = setInterval(() => {
+         // We can perhaps be smarter here and only rely on polling for re-sync
+         // But for simple demo, we keep polling to ensure consistency
+         this.loadMessages();
+         this.matchService.loadMatches();
+      }, 1000);
+   }
+
+   ngOnDestroy() {
+      if (this.intervalId) clearInterval(this.intervalId);
+      if (this.realtimeSubscription) this.realtimeSubscription.unsubscribe();
+      this.chatService.leaveMatch();
+   }
+
+   loadMessages() {
+      this.chatService.getMessages(this.matchId).subscribe(msgs => {
+         // Avoid full replacement flicker if length is same (simple optimization)
+         if (msgs.length !== this.messages.length) {
             const wasAtBottom = this.isAtBottom();
             this.messages = msgs;
             if (wasAtBottom) this.scrollToBottom();
-        });
-    }
+         }
+      });
+   }
 
-    sendMessage() {
-        if (!this.newMessage.trim()) return;
-        const user = this.auth.currentUser();
-        if (!user) return;
-        const text = this.newMessage;
-        this.newMessage = '';
-        this.chatService.sendMessage(this.matchId, text, user.id).subscribe(msg => {
-            this.messages.push(msg);
-            this.scrollToBottom();
-        });
-    }
+   sendMessage() {
+      if (!this.newMessage.trim()) return;
+      const user = this.auth.currentUser();
+      if (!user) return;
+      const text = this.newMessage;
+      this.newMessage = '';
+      this.chatService.sendMessage(this.matchId, text, user.id).subscribe(msg => {
+         this.messages.push(msg);
+         this.scrollToBottom();
+      });
+   }
 
-    acceptTrade() {
-        if (this.isAccepting) return;
-        this.isAccepting = true;
-        this.matchService.acceptTrade(this.matchId).subscribe(() => {
-            this.isAccepting = false;
-            this.matchService.loadMatches(); // refresh immediately
-        });
-    }
+   acceptTrade() {
+      if (this.isAccepting) return;
+      this.isAccepting = true;
+      this.matchService.acceptTrade(this.matchId).subscribe(() => {
+         this.isAccepting = false;
+         this.matchService.loadMatches(); // refresh immediately
+      });
+   }
 
-    completeTrade() {
-        if (!confirm('Are you sure you want to mark this trade as completed?')) return;
-        this.matchService.completeTrade(this.matchId).subscribe(() => {
-            this.matchService.loadMatches();
-        });
-    }
+   completeTrade() {
+      if (!confirm('Are you sure you want to mark this trade as completed?')) return;
+      this.matchService.completeTrade(this.matchId).subscribe(() => {
+         this.matchService.loadMatches();
+      });
+   }
 
-    getMobileHeaderClass() {
-        if (this.activeMatch()?.status === 'accepted') return 'bg-green-50 border-green-200';
-        return 'bg-white border-gray-200';
-    }
+   getMobileHeaderClass() {
+      if (this.activeMatch()?.status === 'accepted') return 'bg-green-50 border-green-200';
+      return 'bg-white border-gray-200';
+   }
 
-    isMe(msg: ChatMessage): boolean {
-        return msg.senderId === this.auth.currentUser()?.id;
-    }
+   isMe(msg: ChatMessage): boolean {
+      return msg.senderId === this.auth.currentUser()?.id;
+   }
 
-    getUserName(userId: string | undefined): string {
-        if (!userId) return 'Unknown';
-        return this.userMap()[userId] || 'Unknown';
-    }
+   getUserName(userId: string | undefined): string {
+      if (!userId) return 'Unknown';
+      return this.userMap()[userId] || 'Unknown';
+   }
 
-    getUserAvatar(userId: string | undefined): string {
-        if (!userId) return '';
-        return this.auth.getUserById(userId).avatar;
-    }
+   getUserAvatar(userId: string | undefined): string {
+      if (!userId) return '';
+      return this.auth.getUserById(userId).avatar;
+   }
 
-    getColorClass(userId: string): string {
-        if (!userId) return 'text-gray-600';
-        return this.colorMap()[userId] || 'text-gray-600';
-    }
+   getColorClass(userId: string): string {
+      if (!userId) return 'text-gray-600';
+      return this.colorMap()[userId] || 'text-gray-600';
+   }
 
-    isAtBottom(): boolean {
-        if (!this.scrollContainer) return true;
-        const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer.nativeElement;
-        return scrollHeight - scrollTop - clientHeight < 50;
-    }
+   isAtBottom(): boolean {
+      if (!this.scrollContainer) return true;
+      const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer.nativeElement;
+      return scrollHeight - scrollTop - clientHeight < 50;
+   }
 
-    scrollToBottom() {
-        setTimeout(() => {
-            if (this.scrollContainer) {
-                this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-            }
-        }, 100);
-    }
+   scrollToBottom() {
+      setTimeout(() => {
+         if (this.scrollContainer) {
+            this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+         }
+      }, 100);
+   }
 
-    selectOffer(offer: Offer) {
-        this.selectedOffer.set(offer);
-    }
+   selectOffer(offer: Offer) {
+      this.selectedOffer.set(offer);
+   }
 
-    clearSelectedOffer() {
-        this.selectedOffer.set(null);
-    }
+   clearSelectedOffer() {
+      this.selectedOffer.set(null);
+   }
 
-    getOfferOwner(offer: Offer | null) {
-        if (!offer) return null;
-        return this.auth.getUserById(offer.userId);
-    }
+   getOfferOwner(offer: Offer | null) {
+      if (!offer) return null;
+      return this.auth.getUserById(offer.userId);
+   }
 }
