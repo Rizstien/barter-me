@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { ChatService } from '../../core/services/chat.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MatchService } from '../../core/services/match.service';
 import { ChatMessage } from '../../core/models/chat.model';
+import { Offer } from '../../core/models/offer.model';
 
 @Component({
     selector: 'app-chat',
@@ -26,29 +27,90 @@ import { ChatMessage } from '../../core/models/chat.model';
               <p class="text-white font-bold">Trade Completed</p>
           </div>
 
-          <div class="p-6 border-b border-gray-100 flex-1">
+          <!-- Offer Detail View (when selected) -->
+          <div *ngIf="selectedOffer()" class="flex-1 overflow-y-auto">
+             <div class="p-6">
+                <!-- Close Button -->
+                <div class="mb-4 flex items-center justify-between">
+                   <button (click)="clearSelectedOffer()" class="inline-flex items-center text-gray-500 hover:text-gray-900 transition-colors">
+                      <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                      <span class="text-sm font-medium">Back to Trade Details</span>
+                   </button>
+                   <button (click)="clearSelectedOffer()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="Close">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                   </button>
+                </div>
+
+                <!-- Full Offer Details -->
+                <div class="space-y-4">
+                   <div class="rounded-lg overflow-hidden bg-gray-100">
+                      <img [src]="selectedOffer()?.imageUrl" class="w-full h-64 object-cover">
+                   </div>
+
+                   <div>
+                      <div class="flex items-center space-x-3 mb-4">
+                         <img [src]="getOfferOwner(selectedOffer())?.avatar" class="w-10 h-10 rounded-full border border-gray-200">
+                         <div>
+                            <h3 class="text-sm font-bold text-gray-900">{{getOfferOwner(selectedOffer())?.name}}</h3>
+                            <p class="text-xs text-gray-500">Member since 2023</p>
+                         </div>
+                      </div>
+
+                      <h1 class="text-2xl font-bold text-gray-900 mb-3">{{selectedOffer()?.title}}</h1>
+                      
+                      <div class="mb-4">
+                         <span class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-bold">
+                            Offering: {{selectedOffer()?.offer}}
+                         </span>
+                      </div>
+                      
+                      <div class="flex items-center space-x-2 mb-4">
+                         <div class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium">
+                            Wants: {{selectedOffer()?.want}}
+                         </div>
+                         <div *ngIf="selectedOffer()?.price" class="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium">
+                            Rs {{selectedOffer()?.price}}
+                         </div>
+                      </div>
+
+                      <p class="text-gray-600 mb-4 leading-relaxed text-sm">
+                         {{selectedOffer()?.description || 'No description provided.'}}
+                      </p>
+
+                      <div class="text-xs text-gray-400 pt-4 border-t border-gray-200">
+                         Posted on {{selectedOffer()?.createdAt | date:'mediumDate'}}
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <!-- Trade Details List (default view) -->
+          <div *ngIf="!selectedOffer()" class="p-6 border-b border-gray-100 flex-1">
              <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Trade Details</h2>
              
              <!-- Other Offers (Loop) -->
              <div *ngFor="let offer of otherOffers(); let last = last" class="mb-4 relative">
-                <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
-                   <img [src]="offer.imageUrl" class="object-cover w-full h-48 rounded-lg">
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{offer.title}}</h3>
-                <div class="mb-2">
-                    <span class="text-xs font-semibold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded">Item: {{offer.offer}}</span>
-                </div>
-                <div class="flex items-center space-x-2 mb-3">
-                   <img [src]="getUserAvatar(offer.userId)" class="w-6 h-6 rounded-full">
-                   <span class="text-sm font-medium" [ngClass]="getColorClass(offer.userId)">{{getUserName(offer.userId)}}</span>
-                </div>
-                <div class="flex flex-col space-y-1">
-                    <div class="inline-block px-2 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded w-fit">
-                        Wants: {{offer.want}}
-                    </div>
-                    <div class="text-xs font-semibold text-gray-500">
-                        Value: Rs {{offer.price}}
-                    </div>
+                <div (click)="selectOffer(offer)" class="cursor-pointer hover:opacity-90 transition-opacity">
+                   <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
+                      <img [src]="offer.imageUrl" class="object-cover w-full h-48 rounded-lg">
+                   </div>
+                   <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{offer.title}}</h3>
+                   <div class="mb-2">
+                       <span class="text-xs font-semibold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded">Item: {{offer.offer}}</span>
+                   </div>
+                   <div class="flex items-center space-x-2 mb-3">
+                      <img [src]="getUserAvatar(offer.userId)" class="w-6 h-6 rounded-full">
+                      <span class="text-sm font-medium" [ngClass]="getColorClass(offer.userId)">{{getUserName(offer.userId)}}</span>
+                   </div>
+                   <div class="flex flex-col space-y-1">
+                       <div class="inline-block px-2 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded w-fit">
+                           Wants: {{offer.want}}
+                       </div>
+                       <div class="text-xs font-semibold text-gray-500">
+                           Value: Rs {{offer.price}}
+                       </div>
+                   </div>
                 </div>
 
                 <!-- Link/Arrow to next item if not last -->
@@ -70,22 +132,24 @@ import { ChatMessage } from '../../core/models/chat.model';
              <div *ngIf="myOffer()" class="">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">You are offering</p>
                 
-                <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
-                    <img [src]="myOffer()?.imageUrl" class="object-cover w-full h-48 rounded-lg opacity-90">
-                </div>
-                
-                <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{myOffer()?.title}}</h3>
-                <div class="mb-2">
-                    <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">Item: {{myOffer()?.offer}}</span>
-                </div>
-                
-                <div class="flex flex-col space-y-1 mt-2">
-                    <div class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded w-fit">
-                        Wants: {{myOffer()?.want}}
-                    </div>
-                    <div class="text-xs font-semibold text-gray-500">
-                        Value: Rs {{myOffer()?.price}}
-                    </div>
+                <div (click)="selectOffer(myOffer()!)" class="cursor-pointer hover:opacity-90 transition-opacity">
+                   <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
+                       <img [src]="myOffer()?.imageUrl" class="object-cover w-full h-48 rounded-lg opacity-90">
+                   </div>
+                   
+                   <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{myOffer()?.title}}</h3>
+                   <div class="mb-2">
+                       <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">Item: {{myOffer()?.offer}}</span>
+                   </div>
+                   
+                   <div class="flex flex-col space-y-1 mt-2">
+                       <div class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded w-fit">
+                           Wants: {{myOffer()?.want}}
+                       </div>
+                       <div class="text-xs font-semibold text-gray-500">
+                           Value: Rs {{myOffer()?.price}}
+                       </div>
+                   </div>
                 </div>
              </div>
           </div>
@@ -156,7 +220,7 @@ import { ChatMessage } from '../../core/models/chat.model';
                 </div>
           </div>
 
-          <div *ngFor="let offer of otherOffers()" class="flex items-start space-x-3 mb-4 last:mb-0">
+          <div *ngFor="let offer of otherOffers()" (click)="selectOffer(offer)" class="flex items-start space-x-3 mb-4 last:mb-0 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
              <img [src]="offer.imageUrl" class="w-16 h-16 rounded-lg object-cover bg-gray-100">
              <div>
                 <div class="flex items-center space-x-2">
@@ -169,7 +233,7 @@ import { ChatMessage } from '../../core/models/chat.model';
           </div>
           <div class="border-t border-gray-100 pt-3 mt-3">
              <p class="text-xs text-gray-400 uppercase mb-2">Your Offer</p>
-             <div class="flex items-center space-x-2">
+             <div *ngIf="myOffer()" (click)="selectOffer(myOffer()!)" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
                 <span class="text-sm font-medium text-gray-900">{{myOffer()?.title}}</span>
              </div>
           </div>
@@ -229,6 +293,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     intervalId: any;
     showDetailsMobile = false;
     isAccepting = false;
+    selectedOffer = signal<Offer | null>(null);
 
     chatService = inject(ChatService);
     matchService = inject(MatchService);
@@ -370,5 +435,18 @@ export class ChatComponent implements OnInit, OnDestroy {
                 this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
             }
         }, 100);
+    }
+
+    selectOffer(offer: Offer) {
+        this.selectedOffer.set(offer);
+    }
+
+    clearSelectedOffer() {
+        this.selectedOffer.set(null);
+    }
+
+    getOfferOwner(offer: Offer | null) {
+        if (!offer) return null;
+        return this.auth.getUserById(offer.userId);
     }
 }
