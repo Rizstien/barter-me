@@ -1,0 +1,15 @@
+{
+    "name": "barter-local-server",
+    "version": "1.0.0",
+    "description": "Local server for BarterMe persistent state",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "fuse.js": "^7.0.0",
+        "haversine-distance": "^1.2.1"
+    }
+}
