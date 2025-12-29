@@ -92,69 +92,70 @@ import { Offer } from '../../core/models/offer.model';
           <div *ngIf="!selectedOffer()" class="p-6 border-b border-gray-100 flex-1">
              <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Trade Details</h2>
              
-             <!-- Other Offers (Loop) -->
-             <div *ngFor="let offer of otherOffers(); let last = last" class="mb-4 relative">
-                <div (click)="selectOffer(offer)" class="cursor-pointer hover:opacity-90 transition-opacity">
-                   <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
-                      <img [src]="offer.imageUrl" class="object-cover w-full h-48 rounded-lg">
-                   </div>
-                   <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{offer.title}}</h3>
-                   <div class="mb-2">
-                       <span class="text-xs font-semibold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded">Item: {{offer.offer}}</span>
-                   </div>
-                   <div class="flex items-center space-x-2 mb-3">
-                      <img [src]="getUserAvatar(offer.userId)" class="w-6 h-6 rounded-full">
-                      <span class="text-sm font-medium" [ngClass]="getColorClass(offer.userId)">{{getUserName(offer.userId)}}</span>
-                   </div>
-                   <div class="flex flex-col space-y-1">
-                       <div class="inline-block px-2 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded w-fit">
-                           Wants: {{offer.want}}
-                       </div>
-                       <div class="text-xs font-semibold text-gray-500">
-                           Value: Rs {{offer.price}}
-                       </div>
-                   </div>
-                </div>
-
-                <!-- Link/Arrow to next item if not last -->
-                <div *ngIf="!last" class="flex justify-center my-6">
-                    <div class="bg-gray-100 p-2 rounded-full">
-                       <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+              <!-- My Offer (First) -->
+              <div *ngIf="myOffer()" class="">
+                 <p class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-2">You are offering</p>
+                 
+                 <div (click)="selectOffer(myOffer()!)" class="cursor-pointer hover:opacity-90 transition-opacity border-2 border-teal-100 rounded-xl p-2 bg-teal-50">
+                    <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white mb-3">
+                        <img [src]="myOffer()?.imageUrl" class="object-cover w-full h-48 rounded-lg opacity-90">
                     </div>
-                </div>
-             </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{myOffer()?.title}}</h3>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600 bg-white px-1.5 py-0.5 rounded border border-gray-200">Item: {{myOffer()?.offer}}</span>
+                    </div>
+                    
+                    <div class="flex flex-col space-y-1 mt-2">
+                        <div class="inline-block px-2 py-1 bg-white text-gray-700 text-xs font-bold rounded w-fit border border-gray-200">
+                            Wants: {{myOffer()?.want}}
+                        </div>
+                        <div class="text-xs font-semibold text-gray-500">
+                            Value: Rs {{myOffer()?.price}}
+                        </div>
+                    </div>
+                 </div>
+              </div>
 
-             <!-- Swap Icon Separator before My Offer -->
-             <div class="flex justify-center my-8">
-                <div class="bg-gray-100 p-2 rounded-full">
-                   <svg class="w-5 h-5 text-gray-400 transform rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                </div>
-             </div>
+              <!-- Swap Icon Separator -->
+              <div class="flex justify-center my-6">
+                 <div class="bg-gray-100 p-2 rounded-full">
+                    <svg class="w-5 h-5 text-gray-400 transform rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                 </div>
+              </div>
 
-             <!-- My Offer -->
-             <div *ngIf="myOffer()" class="">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">You are offering</p>
-                
-                <div (click)="selectOffer(myOffer()!)" class="cursor-pointer hover:opacity-90 transition-opacity">
-                   <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
-                       <img [src]="myOffer()?.imageUrl" class="object-cover w-full h-48 rounded-lg opacity-90">
-                   </div>
-                   
-                   <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{myOffer()?.title}}</h3>
-                   <div class="mb-2">
-                       <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">Item: {{myOffer()?.offer}}</span>
-                   </div>
-                   
-                   <div class="flex flex-col space-y-1 mt-2">
-                       <div class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded w-fit">
-                           Wants: {{myOffer()?.want}}
-                       </div>
-                       <div class="text-xs font-semibold text-gray-500">
-                           Value: Rs {{myOffer()?.price}}
-                       </div>
-                   </div>
-                </div>
-             </div>
+              <!-- Other Offers -->
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Trading For</p>
+              <div *ngFor="let offer of otherOffers(); let last = last" class="mb-4 relative">
+                 <div (click)="selectOffer(offer)" class="cursor-pointer hover:opacity-90 transition-opacity">
+                    <div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-gray-100 mb-3">
+                       <img [src]="offer.imageUrl" class="object-cover w-full h-48 rounded-lg">
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{offer.title}}</h3>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded">Item: {{offer.offer}}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 mb-3">
+                       <img [src]="getUserAvatar(offer.userId)" class="w-6 h-6 rounded-full">
+                       <span class="text-sm font-medium" [ngClass]="getColorClass(offer.userId)">{{getUserName(offer.userId)}}</span>
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                        <div class="inline-block px-2 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded w-fit">
+                            Wants: {{offer.want}}
+                        </div>
+                        <div class="text-xs font-semibold text-gray-500">
+                            Value: Rs {{offer.price}}
+                        </div>
+                    </div>
+                 </div>
+
+                 <!-- Link/Arrow to next item if not last -->
+                 <div *ngIf="!last" class="flex justify-center my-6">
+                     <div class="bg-gray-100 p-2 rounded-full">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                     </div>
+                 </div>
+              </div>
           </div>
 
           <!-- Actions Area -->
@@ -228,6 +229,17 @@ import { Offer } from '../../core/models/offer.model';
                 </div>
           </div>
 
+          <!-- Your Offer (First) -->
+          <div class="border-b border-gray-100 pb-3 mb-3">
+             <p class="text-xs text-teal-600 font-bold uppercase mb-2">Your Offer</p>
+             <div *ngIf="myOffer()" (click)="selectOffer(myOffer()!)" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors border border-teal-100 bg-teal-50">
+                <span class="text-sm font-bold text-gray-900">{{myOffer()?.title}}</span>
+                <span class="text-xs bg-white text-gray-500 px-1 rounded border border-gray-200">You</span>
+             </div>
+          </div>
+
+          <!-- Other Offers -->
+          <p class="text-xs text-gray-400 uppercase mb-2">Trading For</p>
           <div *ngFor="let offer of otherOffers()" (click)="selectOffer(offer)" class="flex items-start space-x-3 mb-4 last:mb-0 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
              <img [src]="offer.imageUrl" class="w-16 h-16 rounded-lg object-cover bg-gray-100">
              <div>
@@ -237,12 +249,6 @@ import { Offer } from '../../core/models/offer.model';
                 </div>
                 <p class="text-sm text-gray-500">Wants: {{offer.want}}</p>
                 <p class="text-xs text-gray-400">Val: {{offer.price}}</p>
-             </div>
-          </div>
-          <div class="border-t border-gray-100 pt-3 mt-3">
-             <p class="text-xs text-gray-400 uppercase mb-2">Your Offer</p>
-             <div *ngIf="myOffer()" (click)="selectOffer(myOffer()!)" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                <span class="text-sm font-medium text-gray-900">{{myOffer()?.title}}</span>
              </div>
           </div>
        </div>
