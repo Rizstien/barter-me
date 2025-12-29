@@ -58,13 +58,16 @@ import { Offer } from '../../core/models/offer.model';
 
                       <h1 class="text-2xl font-bold text-gray-900 mb-3">{{selectedOffer()?.title}}</h1>
                       
-                      <div class="mb-4">
+                      <div class="mb-4 flex flex-wrap gap-2">
                          <span class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-bold">
                             Offering: {{selectedOffer()?.offer}}
                          </span>
+                         <span *ngIf="selectedOffer()?.condition" class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium capitalize">
+                            {{selectedOffer()?.condition?.replace('-', ' ')}}
+                         </span>
                       </div>
                       
-                      <div class="flex items-center space-x-2 mb-4">
+                      <div class="flex items-center space-x-2 mb-4 flex-wrap gap-2">
                          <div class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium">
                             Wants: {{selectedOffer()?.want}}
                          </div>

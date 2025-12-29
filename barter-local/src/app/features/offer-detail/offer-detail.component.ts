@@ -33,12 +33,15 @@ import { AuthService } from '../../core/services/auth.service';
                </div>
 
                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{offer()?.title}}</h1>
-               <div class="mb-4">
+               <div class="mb-4 flex flex-wrap gap-2">
                   <span class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-bold">
                      Offering: {{offer()?.offer}}
                   </span>
+                  <span *ngIf="offer()?.condition" class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium capitalize">
+                     {{offer()?.condition?.replace('-', ' ')}}
+                  </span>
                </div>
-               <div class="flex items-center space-x-2 mb-6">
+               <div class="flex items-center space-x-2 mb-6 flex-wrap gap-2">
                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium">
                       Wants: {{offer()?.want}}
                    </div>
