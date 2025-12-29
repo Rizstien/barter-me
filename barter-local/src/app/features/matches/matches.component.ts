@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatchService } from '../../core/services/match.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,21 +12,17 @@ import { RouterLink } from '@angular/router';
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Your Matches</h1>
 
-      <!-- Tabs -->
-      <div class="flex space-x-4 mb-6 border-b border-gray-200">
-        <button class="pb-4 px-2 border-b-2 border-teal-500 text-teal-600 font-medium">All Matches</button>
-        <!-- <button class="pb-4 px-2 text-gray-500 hover:text-gray-700">Direct</button> -->
-      </div>
       
       <div class="space-y-4">
-        <div *ngFor="let match of matchService.myMatches()" class="bg-white rounded-xl shadow border border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between">
+        <div *ngFor="let match of displayedMatches()" class="bg-white rounded-xl shadow border border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between">
             <div class="flex-1">
-               <div class="flex items-center space-x-2 mb-2">
-                  <span [class]="'px-2 py-0.5 rounded text-xs font-semibold uppercase ' + (match.type === 'direct' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800')">
-                    {{match.type === 'direct' ? 'Direct Trade' : 'Multi-Way Trade'}}
-                  </span>
-                  <span class="text-sm text-gray-500">{{match.createdAt | date}}</span>
-               </div>
+                <div class="flex items-center space-x-2 mb-2">
+                    <span [class]="'px-2 py-0.5 rounded text-xs font-semibold uppercase ' + (match.type === 'direct' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800')">
+                        {{match.type === 'direct' ? 'Direct Trade' : 'Multi-Way Trade'}}
+                    </span>
+                    <span class="text-sm text-gray-500">{{match.createdAt | date}}</span>
+                    <span *ngIf="match.status === 'completed'" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold uppercase ml-2">Completed</span>
+                </div>
                
                <!-- Visual Chain -->
                <div class="flex items-center flex-wrap gap-2 mt-3">
@@ -59,7 +55,7 @@ import { RouterLink } from '@angular/router';
             </div>
         </div>
 
-        <div *ngIf="matchService.myMatches().length === 0" class="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+        <div *ngIf="displayedMatches().length === 0" class="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
             <p class="text-gray-500">No matches found yet. Post more offers to find trades!</p>
             <a routerLink="/create-offer" class="text-teal-600 font-medium hover:underline mt-2 inline-block">Post an Offer</a>
         </div>
@@ -70,6 +66,16 @@ import { RouterLink } from '@angular/router';
 export class MatchesComponent implements OnInit {
    matchService = inject(MatchService);
    auth = inject(AuthService);
+
+   activeTab: 'active' | 'completed' = 'active';
+
+   displayedMatches = computed(() => {
+      const matches = this.matchService.myMatches();
+      if (this.activeTab === 'active') {
+         return matches.filter(m => m.status === 'active' || m.status === 'accepted');
+      }
+      return matches.filter(m => m.status === 'completed');
+   });
 
    getUserName(userId: string) {
       return this.auth.getUserById(userId).name;

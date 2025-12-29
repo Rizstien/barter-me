@@ -219,7 +219,12 @@ import { Offer } from '../../core/models/offer.model';
                     <div *ngIf="hasAccepted()" class="w-full bg-teal-50 text-teal-700 py-3 rounded-lg text-center border border-teal-200">Waiting...</div>
                 </div>
                 <div *ngIf="activeMatch()?.status === 'accepted'">
-                    <button (click)="completeTrade()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold">Mark Completed</button>
+                    <button *ngIf="!hasCompleted()" (click)="completeTrade()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold">
+                        Mark as Completed ({{activeMatch()?.completedBy?.length || 0}}/{{activeMatch()?.offers?.length}})
+                    </button>
+                    <div *ngIf="hasCompleted()" class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg text-center font-medium border border-gray-200">
+                        Waiting for others... ({{activeMatch()?.completedBy?.length || 0}}/{{activeMatch()?.offers?.length}})
+                    </div>
                 </div>
           </div>
 
@@ -312,23 +317,31 @@ export class ChatComponent implements OnInit, OnDestroy {
    // All offers that aren't mine (handles multi-way)
    otherOffers = computed(() => {
       const match = this.activeMatch();
-      const myId = this.auth.currentUser()?.id;
+      const myId = this.auth.currentUser()?.userId;
       return match?.offers.filter(o => o.userId !== myId && o.userId !== 'me') || [];
    });
 
    // My offer
    myOffer = computed(() => {
       const match = this.activeMatch();
-      const myId = this.auth.currentUser()?.id;
+      const myId = this.auth.currentUser()?.userId;
       return match?.offers.find(o => o.userId === myId || o.userId === 'me');
    });
 
    // Check if I have accepted
    hasAccepted = computed(() => {
       const match = this.activeMatch();
-      const myId = this.auth.currentUser()?.id;
+      const myId = this.auth.currentUser()?.userId;
       if (!match || !myId) return false;
       return match.acceptedBy?.includes(myId) || false;
+   });
+
+   // Check if I have marked as completed
+   hasCompleted = computed(() => {
+      const match = this.activeMatch();
+      const myId = this.auth.currentUser()?.userId;
+      if (!match || !myId) return false;
+      return match.completedBy?.includes(myId) || false;
    });
 
    // Map of UserID -> Name

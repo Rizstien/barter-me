@@ -23,6 +23,7 @@ import { ProfileComponent } from './features/profile/profile.component';
               <div class="hidden md:flex items-center space-x-4">
                 <a routerLink="/dashboard" routerLinkActive="text-teal-600" class="text-gray-600 hover:text-gray-900 font-medium">Explore</a>
                 <a routerLink="/matches" routerLinkActive="text-teal-600" class="text-gray-600 hover:text-gray-900 font-medium">Matches</a>
+                <a routerLink="/completed-trades" routerLinkActive="text-teal-600" class="text-gray-600 hover:text-gray-900 font-medium">Completed</a>
                 <a routerLink="/my-ads" routerLinkActive="text-teal-600" class="text-gray-600 hover:text-gray-900 font-medium">My Ads</a>
                 <button (click)="toggleProfile()" class="text-gray-600 hover:text-gray-900 font-medium focus:outline-none">Profile</button>
                 <a routerLink="/create-offer" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm">Post Trade</a>
@@ -56,6 +57,10 @@ import { ProfileComponent } from './features/profile/profile.component';
           <a routerLink="/matches" routerLinkActive="text-teal-600" class="flex flex-col items-center justify-center text-gray-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             <span class="text-xs mt-1">Matches</span>
+          </a>
+          <a routerLink="/completed-trades" routerLinkActive="text-teal-600" class="flex flex-col items-center justify-center text-gray-500">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+             <span class="text-xs mt-1">Completed</span>
           </a>
           <a routerLink="/my-ads" routerLinkActive="text-teal-600" class="flex flex-col items-center justify-center text-gray-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>

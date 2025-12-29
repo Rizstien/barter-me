@@ -26,6 +26,7 @@ export const routes: Routes = [
     { path: 'create-offer', component: CreateOfferComponent, canActivate: [authGuard] },
     { path: 'edit-offer/:id', component: CreateOfferComponent, canActivate: [authGuard] },
     { path: 'matches', component: MatchesComponent, canActivate: [authGuard] },
+    { path: 'completed-trades', loadComponent: () => import('./features/matches/completed-trades.component').then(m => m.CompletedTradesComponent), canActivate: [authGuard] },
     { path: 'chat/:id', component: ChatComponent, canActivate: [authGuard] },
     { path: 'my-ads', component: MyOffersComponent, canActivate: [authGuard] },
 

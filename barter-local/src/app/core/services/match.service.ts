@@ -36,7 +36,9 @@ export class MatchService {
     }
 
     completeTrade(matchId: string) {
-        return this.http.post(`/api/matches/${matchId}/complete`, {});
+        const user = this.auth.currentUser();
+        if (!user) return new Observable();
+        return this.http.post(`/api/matches/${matchId}/complete`, { userId: user.userId });
     }
 }
 import { Observable, of } from 'rxjs'; // Fix import

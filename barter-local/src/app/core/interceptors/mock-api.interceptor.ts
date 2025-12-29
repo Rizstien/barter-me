@@ -52,6 +52,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                 isRead: sm.isRead,
                 offers: offers,
                 acceptedBy: sm.acceptedBy || [],
+                completedBy: sm.completedBy || [],
                 status: sm.status || 'active'
             } as Match;
         }).filter((m): m is Match => m !== null);
@@ -67,6 +68,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
             isRead: m.isRead,
             offerIds: m.offers.map(o => o.id),
             acceptedBy: m.acceptedBy || [],
+            completedBy: m.completedBy || [],
             status: m.status || 'active'
         }));
         storage.setItem('barter-matches', storedMatches);
@@ -306,6 +308,33 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
             if (allAccepted) {
                 match.status = 'accepted';
+            }
+
+            saveMatches(matches);
+        }
+        return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(SIMULATED_DELAY));
+    }
+
+    // POST /api/matches/{matchId}/complete
+    if (req.url.includes('/complete') && req.method === 'POST') {
+        const matchId = req.url.split('/')[3]; // /api/matches/:id/complete
+        const userId = (req.body as any).userId;
+        const matches = getMatches();
+        const match = matches.find(m => m.id === matchId);
+
+        if (match) {
+            if (!match.completedBy) match.completedBy = [];
+            if (!match.completedBy.includes(userId)) {
+                match.completedBy.push(userId);
+            }
+
+            // Check if ALL parties completed
+            const allUserIds = match.offers.map(o => o.userId);
+            const distinctUsers = [...new Set(allUserIds)];
+            const allCompleted = distinctUsers.every(uid => match.completedBy?.includes(uid));
+
+            if (allCompleted) {
+                match.status = 'completed';
             }
 
             saveMatches(matches);
