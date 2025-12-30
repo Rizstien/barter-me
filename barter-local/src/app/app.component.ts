@@ -9,27 +9,28 @@ import { ProfileComponent } from './features/profile/profile.component';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, ProfileComponent],
   styles: [`
-    .premium-bg {
-      background-color: #f8fafc; /* Slate-50 base */
+    .fixed-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -10;
+      background-color: #f8fafc;
       background-image: 
         radial-gradient(at 0% 0%, hsla(190, 80%, 94%, 0.8) 0px, transparent 50%),
         radial-gradient(at 100% 0%, hsla(210, 80%, 96%, 0.8) 0px, transparent 50%),
         radial-gradient(at 100% 100%, hsla(180, 70%, 95%, 0.8) 0px, transparent 50%),
         radial-gradient(at 0% 100%, hsla(200, 70%, 93%, 0.8) 0px, transparent 50%);
-      background-attachment: fixed;
-      position: relative;
-    }
-    .premium-bg::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
       pointer-events: none;
-      z-index: 0;
+      /* Removed heavy SVG noise filter and background-attachment: fixed which causes repaints */
     }
   `],
   template: `
-    <div class="min-h-screen premium-bg flex flex-col font-sans text-slate-800">
+    <!-- Dedicated Static Background Layer -->
+    <div class="fixed-bg"></div>
+
+    <div class="min-h-screen flex flex-col font-sans text-slate-800 relative">
       <!-- Top Navbar (Desktop/Mobile) -->
       <nav *ngIf="auth.isLoggedIn()" class="bg-white/80 backdrop-blur-md shadow-sm z-30 sticky top-0 border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
