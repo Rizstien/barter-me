@@ -21,8 +21,9 @@ import { AuthService } from '../../../core/services/auth.service';
             <span class="text-xs text-gray-500">{{offerOwner()?.name}}</span>
         </div>
         <h3 class="text-lg font-bold text-gray-900 leading-tight mb-1">{{offer.title}}</h3>
-        <div class="mb-2">
+        <div class="mb-2 flex flex-wrap gap-1.5">
             <span class="inline-block bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded">Offering: {{offer.offer}}</span>
+            <span *ngIf="offer.condition" class="inline-block bg-blue-50 text-blue-700 text-[10px] font-medium px-2 py-0.5 rounded capitalize">{{offer.condition.replace('-', ' ')}}</span>
         </div>
         <p class="text-gray-600 text-sm line-clamp-2 mb-3">{{offer.description}}</p>
         

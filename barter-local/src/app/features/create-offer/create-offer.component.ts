@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { OfferService } from '../../core/services/offer.service';
 import { AuthService } from '../../core/services/auth.service';
 import { effect, computed } from '@angular/core';
+import { ItemCondition } from '../../core/models/offer.model';
 
 @Component({
   selector: 'app-create-offer',
@@ -19,10 +20,8 @@ import { effect, computed } from '@angular/core';
           
           <!-- Image Upload Preview -->
           <div class="flex justify-center">
-            <div class="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden" 
-                 [class.cursor-pointer]="!previewUrl"
-                 [class.hover:bg-gray-50]="!previewUrl"
-                 (click)="!previewUrl && triggerUpload()">
+            <div class="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-50 group" 
+                 (click)="triggerUpload()">
                  
               <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
               
@@ -56,6 +55,79 @@ import { effect, computed } from '@angular/core';
           <div>
              <label class="block text-sm font-medium text-gray-700">What are you Offering? (Item Name)</label>
              <input type="text" [(ngModel)]="offer" name="offer" required placeholder="e.g. Mountain Bike" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm px-4 py-2 border text-gray-900">
+          </div>
+
+          <div>
+             <label class="block text-sm font-medium text-gray-700 mb-3">Condition</label>
+             <div class="flex flex-wrap gap-2">
+                <button 
+                   type="button"
+                   (click)="condition = 'new'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'new',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'new'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   New
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = 'like-new'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'like-new',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'like-new'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   Like New
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = 'excellent'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'excellent',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'excellent'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   Excellent
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = 'good'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'good',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'good'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   Good
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = 'fair'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'fair',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'fair'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   Fair
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = 'poor'"
+                   [ngClass]="{
+                      'bg-teal-600 text-white border-teal-600 shadow-md': condition === 'poor',
+                      'bg-white text-gray-700 border-gray-300': condition !== 'poor'
+                   }"
+                   class="px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:border-teal-400 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                   Poor
+                </button>
+                <button 
+                   type="button"
+                   (click)="condition = undefined"
+                   *ngIf="condition"
+                   class="px-3 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+                   Clear
+                </button>
+             </div>
           </div>
 
           <div>
@@ -99,6 +171,7 @@ export class CreateOfferComponent {
   description = '';
   want = '';
   price: number | null = null;
+  condition: ItemCondition | undefined = undefined;
   previewUrl: string | null = null;
   isSubmitting = false;
 
@@ -124,6 +197,7 @@ export class CreateOfferComponent {
           this.description = found.description;
           this.want = found.want;
           this.price = found.price || null;
+          this.condition = found.condition;
           this.previewUrl = found.imageUrl;
         }
       }
@@ -213,6 +287,7 @@ export class CreateOfferComponent {
         description: this.description,
         want: this.want,
         price: this.price || 0,
+        condition: this.condition,
         imageUrl: this.previewUrl || '',
         createdAt: new Date() // Should probably keep original date, but preserving it in service/interceptor
       }).subscribe({
@@ -235,6 +310,7 @@ export class CreateOfferComponent {
         description: this.description,
         want: this.want,
         price: this.price || 0,
+        condition: this.condition,
         imageUrl: this.previewUrl || 'https://placehold.co/300x200?text=' + this.offer,
         createdAt: new Date()
       }).subscribe({
