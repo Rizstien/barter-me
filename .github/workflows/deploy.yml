@@ -8,6 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Set all steps to run inside barter-local
+    defaults:
+      run:
+        working-directory: barter-local
 
     steps:
       - name: Checkout code
