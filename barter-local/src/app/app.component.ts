@@ -37,7 +37,7 @@ import { ProfileComponent } from './features/profile/profile.component';
           <div class="flex justify-between h-16">
             <div class="flex items-center">
               <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-blue-600">
-                BarterLocal
+                ScotchCorner
               </span>
             </div>
             <div class="flex items-center space-x-4">

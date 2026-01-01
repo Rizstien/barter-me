@@ -1,4 +1,4 @@
-# BarterLocal
+# ScotchCorner
 
 A mock-first Barter Exchange platform allowing users to post offers and find direct or multi-way match chains.
 

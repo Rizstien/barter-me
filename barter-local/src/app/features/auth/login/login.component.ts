@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [FormsModule],
-  template: `
+    selector: 'app-login',
+    standalone: true,
+    imports: [FormsModule],
+    template: `
     <div class="min-h-screen flex bg-white">
       <!-- Left Side: Visual & Brand (Hidden on Mobile) -->
       <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
@@ -27,7 +27,7 @@ import { AuthService } from '../../../core/services/auth.service';
                   <div class="h-16 w-16 bg-teal-500 rounded-2xl mb-6 shadow-lg shadow-teal-500/20 flex items-center justify-center">
                       <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                   </div>
-                  <h1 class="text-5xl font-bold mb-4 tracking-tight">BarterLocal</h1>
+                  <h1 class="text-5xl font-bold mb-4 tracking-tight">ScotchCorner</h1>
                   <p class="text-xl text-gray-300 font-light max-w-md">Connect with your neighborhood. Trade goods seamlessly. Build a sustainable community.</p>
               </div>
               
@@ -129,7 +129,7 @@ import { AuthService } from '../../../core/services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
      @keyframes blob {
          0% { transform: translate(0px, 0px) scale(1); }
          33% { transform: translate(30px, -50px) scale(1.1); }
@@ -164,20 +164,20 @@ import { AuthService } from '../../../core/services/auth.service';
   `]
 })
 export class LoginComponent {
-  userId = '';
-  password = '';
-  errorMessage = '';
+    userId = '';
+    password = '';
+    errorMessage = '';
 
-  auth = inject(AuthService);
-  router = inject(Router);
+    auth = inject(AuthService);
+    router = inject(Router);
 
-  onSubmit() {
-    if (this.userId) {
-      if (this.auth.login(this.userId)) {
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = 'Incorrect user ID or password.';
-      }
+    onSubmit() {
+        if (this.userId) {
+            if (this.auth.login(this.userId)) {
+                this.router.navigate(['/dashboard']);
+            } else {
+                this.errorMessage = 'Incorrect user ID or password.';
+            }
+        }
     }
-  }
 }

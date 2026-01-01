@@ -178,9 +178,12 @@ import { Offer } from '../../core/models/offer.model';
 
              <!-- Complete Button (Only if Accepted) -->
              <div *ngIf="activeMatch()?.status === 'accepted'">
-                 <button (click)="completeTrade()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-black transition-colors">
+                 <button *ngIf="!hasCompleted()" (click)="showConfirmationModal = true" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-black transition-colors">
                     Mark as Completed
                  </button>
+                 <div *ngIf="hasCompleted()" class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg text-center font-medium border border-gray-200">
+                    Waiting for others... ({{activeMatch()?.completedBy?.length || 0}}/{{activeMatch()?.offers?.length}})
+                 </div>
              </div>
           </div>
        </div>
@@ -220,7 +223,7 @@ import { Offer } from '../../core/models/offer.model';
                     <div *ngIf="hasAccepted()" class="w-full bg-teal-50 text-teal-700 py-3 rounded-lg text-center border border-teal-200">Waiting...</div>
                 </div>
                 <div *ngIf="activeMatch()?.status === 'accepted'">
-                    <button *ngIf="!hasCompleted()" (click)="completeTrade()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold">
+                    <button *ngIf="!hasCompleted()" (click)="showConfirmationModal = true" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold">
                         Mark as Completed ({{activeMatch()?.completedBy?.length || 0}}/{{activeMatch()?.offers?.length}})
                     </button>
                     <div *ngIf="hasCompleted()" class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg text-center font-medium border border-gray-200">
@@ -296,6 +299,29 @@ import { Offer } from '../../core/models/offer.model';
           </div>
        </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <div *ngIf="showConfirmationModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+       <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-100">
+          <div class="p-6 text-center">
+             <div class="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+             </div>
+             <h3 class="text-xl font-bold text-gray-900 mb-2">Complete Trade?</h3>
+             <p class="text-gray-500 text-sm mb-6">
+                Are you sure you want to mark this trade as completed? This action cannot be undone.
+             </p>
+             <div class="grid grid-cols-2 gap-3">
+                <button (click)="showConfirmationModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                   Cancel
+                </button>
+                <button (click)="confirmCompleteTrade()" class="px-4 py-2 bg-gray-900 text-white rounded-lg font-bold hover:bg-black transition-colors">
+                   Yes, Complete
+                </button>
+             </div>
+          </div>
+       </div>
+    </div>
   `
 })
 export class ChatComponent implements OnInit, OnDestroy {
@@ -308,6 +334,7 @@ export class ChatComponent implements OnInit, OnDestroy {
    showDetailsMobile = false;
    isAccepting = false;
    selectedOffer = signal<Offer | null>(null);
+   showConfirmationModal = false;
 
    chatService = inject(ChatService);
    matchService = inject(MatchService);
@@ -436,7 +463,14 @@ export class ChatComponent implements OnInit, OnDestroy {
    }
 
    completeTrade() {
-      if (!confirm('Are you sure you want to mark this trade as completed?')) return;
+      // Logic moved to confirmCompleteTrade, this just opens modal
+      // This implementation is now redundant if the button directly toggles the modal, 
+      // but kept as placeholder if called programmatically.
+      this.showConfirmationModal = true;
+   }
+
+   confirmCompleteTrade() {
+      this.showConfirmationModal = false;
       this.matchService.completeTrade(this.matchId).subscribe(() => {
          this.matchService.loadMatches();
       });
@@ -453,7 +487,9 @@ export class ChatComponent implements OnInit, OnDestroy {
 
    getUserName(userId: string | undefined): string {
       if (!userId) return 'Unknown';
-      return this.userMap()[userId] || 'Unknown';
+      // userMap only indexed by email, so we use the robust service method
+      // which handles both ID types (numeric and email)
+      return this.auth.getUserById(userId).name;
    }
 
    getUserAvatar(userId: string | undefined): string {

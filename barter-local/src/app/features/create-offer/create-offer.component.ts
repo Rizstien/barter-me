@@ -20,10 +20,8 @@ import { ItemCondition } from '../../core/models/offer.model';
           
           <!-- Image Upload Preview -->
           <div class="flex justify-center">
-            <div class="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden" 
-                 [class.cursor-pointer]="!previewUrl"
-                 [class.hover:bg-gray-50]="!previewUrl"
-                 (click)="!previewUrl && triggerUpload()">
+            <div class="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-50 group" 
+                 (click)="triggerUpload()">
                  
               <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
               

@@ -103,7 +103,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
         // Optimized Fuse Options
         const fuseOptions = {
-            keys: ['title', 'offer', 'description', 'want'], // Search in these
+            keys: ['offer', 'want'], // Search in these
             threshold: 0.6,
             ignoreLocation: true
         };
@@ -113,26 +113,23 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         // Approach: "Does A want B?"
         // We search for A.want in B's fields.
 
-        // Simple helper using Fuse for single-item check (mimics server.js isFuzzyMatch)
+        // Helper for strict fuzzy matching on specific text
         const isFuzzyMatch = (text: string, query: string) => {
             if (!text || !query) return false;
-            // Search query IN text
             const list = [{ t: text }];
-            const fuse = new Fuse(list, { keys: ['t'], threshold: 0.6 });
+            // Threshold 0.3 = Strict but allows minor typos
+            const fuse = new Fuse(list, { keys: ['t'], threshold: 0.3, ignoreLocation: true });
             return fuse.search(query).length > 0;
         };
 
         const isMatch = (a: Offer, b: Offer) => {
             if (a.userId === b.userId) return false;
-            // A wants B? 
-            // Check if B.offer matches A.want
-            const match1 = isFuzzyMatch(b.offer + ' ' + b.title, a.want);
-            // OR checks B.description too?
 
-            // Allow loose matching: simple strings or fuzzy
-            return match1 ||
-                a.want.toLowerCase().includes(b.offer.toLowerCase()) ||
-                b.offer.toLowerCase().includes(a.want.toLowerCase());
+            // STRICT MATCHING: Does Offer 'b' satisfy User 'a's want?
+            // We ONLY compare b.offer against a.want.
+            // Excluding title/description to prevent irrelevant matches.
+
+            return isFuzzyMatch(b.offer, a.want);
         };
 
         // 1. Find 2-Way Matches (A <-> B)
@@ -255,7 +252,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         const newOffer = { ...req.body as Offer, id: crypto.randomUUID(), createdAt: new Date() };
         const offers = getOffers();
         offers.unshift(newOffer);
-        storage.setItem('app_offers', offers);
+        storage.setItem('barter-offers', offers);
 
         const matches = generateMatches(offers); // Re-run matching with Fuse
 
