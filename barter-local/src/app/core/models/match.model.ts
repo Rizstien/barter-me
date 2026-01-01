@@ -11,5 +11,6 @@ export interface Match {
     createdAt: Date;
     isRead: boolean;
     acceptedBy: string[]; // List of user IDs who accepted
+    completedBy?: string[]; // List of user IDs who marked as complete
     status: 'active' | 'accepted' | 'completed';
 }
