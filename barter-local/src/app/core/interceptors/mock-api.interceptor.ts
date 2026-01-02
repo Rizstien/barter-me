@@ -20,6 +20,20 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     const SIMULATED_DELAY = Math.random() * 300 + 200; // 200-500ms
 
     // --- Helper to get data ---
+    const generateUUID = () => {
+        // Check if crypto.randomUUID is available (Secure Contexts)
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+
+        // Fallback: Math.random() based UUID v4
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+
     const getOffers = (): Offer[] => {
         const stored = storage.getItem<Offer[]>('barter-offers'); // Changed to match pattern, though not explicitly asked, for consistency
         if (stored && stored.length > 0) return stored;
@@ -142,7 +156,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                     const ids = [a.id, b.id].sort().join('-');
                     if (!processedIds.has(ids)) {
                         matches.push({
-                            id: crypto.randomUUID(),
+                            id: generateUUID(),
                             type: 'direct',
                             offers: [a, b],
                             score: 1.0,
@@ -175,7 +189,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                         const ids = [a.id, b.id, c.id].sort().join('-');
                         if (!processedIds.has(ids)) {
                             matches.push({
-                                id: crypto.randomUUID(),
+                                id: generateUUID(),
                                 type: '3way',
                                 offers: [a, b, c],
                                 score: 1.0,
@@ -211,7 +225,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
                             const ids = [a.id, b.id, c.id, d.id].sort().join('-');
                             if (!processedIds.has(ids)) {
                                 matches.push({
-                                    id: crypto.randomUUID(),
+                                    id: generateUUID(),
                                     type: '4way' as any,
                                     offers: [a, b, c, d],
                                     score: 1.0,
@@ -249,7 +263,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
     // POST /api/offers
     if (req.url.endsWith('/api/offers') && req.method === 'POST') {
-        const newOffer = { ...req.body as Offer, id: crypto.randomUUID(), createdAt: new Date() };
+        const newOffer = { ...req.body as Offer, id: generateUUID(), createdAt: new Date() };
         const offers = getOffers();
         offers.unshift(newOffer);
         storage.setItem('barter-offers', offers);
@@ -381,7 +395,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     if (req.url.includes('/api/chat/') && req.method === 'POST') {
         const matchId = req.url.split('/').pop() || '';
         const chats = getChats();
-        const msg = { ...(req.body as any), id: crypto.randomUUID(), matchId, timestamp: new Date() };
+        const msg = { ...(req.body as any), id: generateUUID(), matchId, timestamp: new Date() };
         if (!chats[matchId]) chats[matchId] = [];
         chats[matchId].push(msg);
         saveChats(chats);
