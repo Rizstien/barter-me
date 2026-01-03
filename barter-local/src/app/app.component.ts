@@ -68,7 +68,7 @@ import { ProfileComponent } from './features/profile/profile.component';
       </main>
 
       <!-- Bottom Tab Bar (Mobile Only) -->
-      <nav *ngIf="auth.isLoggedIn()" class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 z-20 pb-safe">
+      <nav *ngIf="auth.isLoggedIn()" class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe" [class.z-50]="isProfileOpen" [class.z-20]="!isProfileOpen">
         <div class="grid grid-cols-5 h-16">
           <a routerLink="/dashboard" routerLinkActive="text-teal-600" class="flex flex-col items-center justify-center text-gray-500">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
@@ -94,7 +94,7 @@ import { ProfileComponent } from './features/profile/profile.component';
                 <span class="text-xs mt-1">Profile</span>
              </button>
              <!-- Mobile Dropdown opening upwards -->
-             <app-profile *ngIf="isProfileOpen" [isOpen]="isProfileOpen" (close)="isProfileOpen = false" class="absolute bottom-full mb-4 right-0 z-50"></app-profile>
+             <app-profile *ngIf="isProfileOpen" [isOpen]="isProfileOpen" alignment="bottom" (close)="isProfileOpen = false" class="absolute bottom-0 right-0 z-50"></app-profile>
           </div>
         </div>
       </nav>

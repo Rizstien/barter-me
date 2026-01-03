@@ -13,7 +13,8 @@ import { RouterLink } from '@angular/router';
 
     <!-- Dropdown Panel -->
     <div *ngIf="isOpen" 
-         class="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1rem)] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden transform origin-top-right transition-all">
+         [ngClass]="alignment === 'top' ? 'absolute right-0 mt-2 origin-top-right' : 'absolute right-0 bottom-full mb-2 origin-bottom-right'"
+         class="w-72 sm:w-80 max-w-[calc(100vw-1rem)] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden transform transition-all">
         
         <!-- Header -->
         <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-6 text-center">
@@ -77,6 +78,7 @@ import { RouterLink } from '@angular/router';
 })
 export class ProfileComponent {
     @Input() isOpen = false;
+    @Input() alignment: 'top' | 'bottom' = 'top';
     @Output() close = new EventEmitter<void>();
     auth = inject(AuthService);
 
